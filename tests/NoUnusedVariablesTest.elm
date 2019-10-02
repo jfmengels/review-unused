@@ -615,6 +615,15 @@ a =
         Just (Bar.Baz range) ->
             []"""
                 |> Review.Test.expectNoErrors
+    , test "should not report unused import when a type is deconstructed in a function call" <|
+        \() ->
+            testRule """module SomeModule exposing (a)
+import Bar
+
+a (Bar.Baz range) =
+    []
+    """
+                |> Review.Test.expectNoErrors
     ]
 
 
