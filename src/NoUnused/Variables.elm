@@ -96,6 +96,7 @@ type VariableType
     | ImportedItem ImportType
     | ModuleAlias { originalNameOfTheImport : String, exposesSomething : Bool }
     | Type
+    | ParameterAlias
     | Port
 
 
@@ -167,6 +168,9 @@ variableTypeToString variableType =
         Type ->
             "Type"
 
+        ParameterAlias ->
+            "Parameter alias"
+
         Port ->
             "Port"
 
@@ -190,6 +194,9 @@ variableTypeWarning value =
             ""
 
         Type ->
+            ""
+
+        ParameterAlias ->
             ""
 
         Port ->
@@ -219,6 +226,9 @@ addFix declaredModules { variableType, rangeToRemove } error_ =
                         || not (Dict.member originalNameOfTheImport declaredModules)
 
                 Type ->
+                    True
+
+                ParameterAlias ->
                     True
 
                 Port ->
@@ -542,6 +552,59 @@ getUsedModulesFromPattern patternNode =
             getUsedModulesFromPattern pattern
 
 
+getAliasesInArgument : Node Pattern -> List { name : String, under : Range, rangeToRemove : Range }
+getAliasesInArgument patternNode =
+    case Node.value patternNode of
+        Pattern.AllPattern ->
+            []
+
+        Pattern.UnitPattern ->
+            []
+
+        Pattern.CharPattern _ ->
+            []
+
+        Pattern.StringPattern _ ->
+            []
+
+        Pattern.IntPattern _ ->
+            []
+
+        Pattern.HexPattern _ ->
+            []
+
+        Pattern.FloatPattern _ ->
+            []
+
+        Pattern.TuplePattern patterns ->
+            []
+
+        Pattern.RecordPattern _ ->
+            []
+
+        Pattern.UnConsPattern pattern1 pattern2 ->
+            []
+
+        Pattern.ListPattern patterns ->
+            []
+
+        Pattern.VarPattern _ ->
+            []
+
+        Pattern.NamedPattern qualifiedNameRef patterns ->
+            []
+
+        Pattern.AsPattern (Node patternRange _) (Node aliasRange aliasName) ->
+            [ { name = aliasName
+              , under = aliasRange
+              , rangeToRemove = { start = patternRange.end, end = aliasRange.end }
+              }
+            ]
+
+        Pattern.ParenthesizedPattern pattern ->
+            getAliasesInArgument pattern
+
+
 declarationVisitor : Node Declaration -> Direction -> Context -> ( List Error, Context )
 declarationVisitor node direction context =
     case ( direction, Node.value node ) of
@@ -557,13 +620,29 @@ declarationVisitor node direction context =
                         |> Maybe.map (Node.value >> .typeAnnotation >> collectNamesFromTypeAnnotation)
                         |> Maybe.withDefault { types = [], modules = [] }
 
+                arguments : List (Node Pattern)
+                arguments =
+                    (Node.value function.declaration).arguments
+
                 namesUsedInArgumentPatterns : { types : List String, modules : List String }
                 namesUsedInArgumentPatterns =
-                    function.declaration
-                        |> Node.value
-                        |> .arguments
+                    arguments
                         |> List.map getUsedVariablesFromPattern
                         |> foldUsedTypesAndModules
+
+                argumentAliases : List ( VariableInfo, String )
+                argumentAliases =
+                    arguments
+                        |> List.concatMap getAliasesInArgument
+                        |> List.map
+                            (\{ name, rangeToRemove, under } ->
+                                ( { variableType = ParameterAlias
+                                  , under = under
+                                  , rangeToRemove = rangeToRemove
+                                  }
+                                , name
+                                )
+                            )
 
                 newContext : Context
                 newContext =
@@ -576,8 +655,26 @@ declarationVisitor node direction context =
                             (Node.value functionImplementation.name)
                         |> markUsedTypesAndModules namesUsedInSignature
                         |> markUsedTypesAndModules namesUsedInArgumentPatterns
+                        |> (\newContext_ ->
+                                List.foldl
+                                    (\( variableInfo, name ) context_ -> register variableInfo name context_)
+                                    { newContext_ | scopes = Nonempty.cons emptyScope newContext_.scopes }
+                                    argumentAliases
+                           )
             in
             ( [], newContext )
+
+        ( Rule.OnExit, FunctionDeclaration function ) ->
+            let
+                ( errors, remainingUsed ) =
+                    makeReport (Nonempty.head <| context.scopes)
+
+                contextWithPoppedScope =
+                    { context | scopes = Nonempty.pop context.scopes }
+            in
+            ( errors
+            , markAllAsUsed remainingUsed contextWithPoppedScope
+            )
 
         ( Rule.OnEnter, CustomTypeDeclaration { name, documentation, constructors } ) ->
             let
@@ -937,6 +1034,9 @@ register variableInfo name context =
             registerModule variableInfo name context
 
         Type ->
+            registerVariable variableInfo name context
+
+        ParameterAlias ->
             registerVariable variableInfo name context
 
         Port ->

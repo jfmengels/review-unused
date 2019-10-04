@@ -375,6 +375,19 @@ functionParameterTests =
             testRule """module SomeModule exposing (a)
 a n = 1"""
                 |> Review.Test.expectNoErrors
+    , test "should report unused parameter aliases (root parameter level)" <|
+        \() ->
+            testRule """module SomeModule exposing (a)
+a ({n} as argAlias) = 1"""
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Parameter alias `argAlias` is not used"
+                        , details = details
+                        , under = "argAlias"
+                        }
+                        |> Review.Test.whenFixed """module SomeModule exposing (a)
+a ({n}) = 1"""
+                    ]
     , test "should not report unused import when a type is deconstructed in a function call" <|
         \() ->
             testRule """module SomeModule exposing (a)
