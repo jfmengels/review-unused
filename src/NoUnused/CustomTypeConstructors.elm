@@ -10,6 +10,7 @@ module NoUnused.CustomTypeConstructors exposing (rule)
 -}
 
 import Dict exposing (Dict)
+import Elm.Docs
 import Elm.Module
 import Elm.Project
 import Elm.Syntax.Declaration as Declaration exposing (Declaration)
@@ -20,6 +21,7 @@ import Elm.Syntax.ModuleName exposing (ModuleName)
 import Elm.Syntax.Node as Node exposing (Node)
 import Elm.Syntax.Signature exposing (Signature)
 import Elm.Syntax.TypeAnnotation as TypeAnnotation exposing (TypeAnnotation)
+import Review.Project.Dependency exposing (Dependency)
 import Review.Rule as Rule exposing (Direction, Error, Rule)
 import Scope
 import Set exposing (Set)
@@ -109,13 +111,14 @@ rule : List { moduleName : String, typeName : String, index : Int } -> Rule
 rule phantomTypes =
     Rule.newProjectRuleSchema "NoUnused.CustomTypeConstructors" (initialProjectContext phantomTypes)
         |> Scope.addProjectVisitors
+        |> Rule.withElmJsonProjectVisitor elmJsonVisitor
+        |> Rule.withDependenciesProjectVisitor dependenciesVisitor
         |> Rule.withModuleVisitor moduleVisitor
         |> Rule.withModuleContext
             { fromProjectToModule = fromProjectToModule
             , fromModuleToProject = fromModuleToProject
             , foldProjectContexts = foldProjectContexts
             }
-        |> Rule.withElmJsonProjectVisitor elmJsonVisitor
         |> Rule.withFinalProjectEvaluation finalProjectEvaluation
         |> Rule.fromProjectRuleSchema
 
@@ -300,6 +303,30 @@ elmJsonVisitor maybeElmJson projectContext =
 
         Nothing ->
             ( [], projectContext )
+
+
+
+-- DEPENDENCIES VISITOR
+
+
+dependenciesVisitor : Dict String Dependency -> ProjectContext -> ( List nothing, ProjectContext )
+dependenciesVisitor dependencies projectContext =
+    let
+        modules : List Elm.Docs.Module
+        modules =
+            Dict.values dependencies
+                |> List.concatMap Review.Project.Dependency.modules
+
+        phantomVariables : List ( CustomTypeName, Int )
+        phantomVariables =
+            []
+
+        -- TODO
+        newPhantomVariables : Dict ModuleName (List ( CustomTypeName, Int ))
+        newPhantomVariables =
+            Dict.insert [ "Foo" ] phantomVariables projectContext.phantomVariables
+    in
+    ( [], { projectContext | phantomVariables = newPhantomVariables } )
 
 
 

@@ -1,9 +1,12 @@
 module NoUnused.CustomTypeConstructorsTest exposing (all)
 
+import Elm.Docs
 import Elm.Project
+import Elm.Type
 import Json.Decode as Decode
 import NoUnused.CustomTypeConstructors exposing (rule)
 import Review.Project as Project exposing (Project)
+import Review.Project.Dependency as Dependency exposing (Dependency)
 import Review.Test
 import Test exposing (Test, describe, test)
 
@@ -12,12 +15,14 @@ packageProject : Project
 packageProject =
     Project.new
         |> Project.addElmJson (createElmJson packageElmJson)
+        |> Project.addDependency dependency
 
 
 applicationProject : Project
 applicationProject =
     Project.new
         |> Project.addElmJson (createElmJson applicationElmJson)
+        |> Project.addDependency dependency
 
 
 createElmJson : String -> { path : String, raw : String, project : Elm.Project.Project }
@@ -77,6 +82,59 @@ packageElmJson =
     },
     "test-dependencies": {}
 }"""
+
+
+dependency : Dependency
+dependency =
+    let
+        modules : List Elm.Docs.Module
+        modules =
+            [ { name = "Foo"
+              , comment = ""
+              , unions =
+                    [ { name = "ExplicitPhantom"
+                      , comment = ""
+                      , args = [ "a" ]
+                      , tags = [ ( "ExplicitPhantom", [] ) ]
+                      }
+                    , { name = "OpaqueCustomType"
+                      , comment = ""
+                      , args = [ "a" ]
+                      , tags = []
+                      }
+                    ]
+              , aliases =
+                    [ { name = "AliasToOpaqueType"
+                      , comment = ""
+                      , args = [ "a" ]
+                      , tipe = Elm.Type.Var "Hidden.Thing"
+                      }
+                    ]
+              , values = []
+              , binops = []
+              }
+            ]
+
+        elmJson : Elm.Project.Project
+        elmJson =
+            .project <| createElmJson """
+  {
+      "type": "package",
+      "name": "author/package-with-foo",
+      "summary": "Summary",
+      "license": "BSD-3-Clause",
+      "version": "1.0.0",
+      "exposed-modules": [
+          "Foo"
+      ],
+      "elm-version": "0.19.0 <= v < 0.20.0",
+      "dependencies": {
+          "elm/core": "1.0.0 <= v < 2.0.0"
+      },
+      "test-dependencies": {}
+  }"""
+    in
+    Dependency.create "author/package" elmJson modules
 
 
 details : List String
@@ -367,13 +425,9 @@ id = Id
                     |> Review.Test.expectNoErrors
         , test "should not report a custom type, when it is used in the stead of a type that the user said is a phantom variable" <|
             \() ->
-                """
-module MyModule exposing (id)
-
+                """module MyModule exposing (id)
 import IdModule exposing (Id)
-
 type User = User Something
-
 id : Id User
 id = Id
 """
@@ -385,6 +439,17 @@ id = Id
                               }
                             ]
                         )
+                    |> Review.Test.expectNoErrors
+        , test "should not report a custom type with one constructor, when it is used in the stead of a phantom variable from a dependency" <|
+            \() ->
+                """module MyModule exposing (id)
+import Foo exposing (ExplicitPhantom)
+import IdModule exposing (Id)
+type User = User
+id : ExplicitPhantom User
+id = Id
+"""
+                    |> Review.Test.runWithProjectData project (rule [])
                     |> Review.Test.expectNoErrors
         ]
 
