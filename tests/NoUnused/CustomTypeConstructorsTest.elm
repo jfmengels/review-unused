@@ -104,10 +104,15 @@ dependency =
                       }
                     ]
               , aliases =
-                    [ { name = "AliasToOpaqueType"
+                    [ { name = "AliasToExplicitPhantom"
                       , comment = ""
                       , args = [ "a" ]
-                      , tipe = Elm.Type.Var "Hidden.Thing"
+                      , tipe = Elm.Type.Type "ExplicitPhantom" [ Elm.Type.Var "a" ]
+                      }
+                    , { name = "AliasToOpaqueType"
+                      , comment = ""
+                      , args = [ "a" ]
+                      , tipe = Elm.Type.Type "Hidden.Thing" [ Elm.Type.Var "a" ]
                       }
                     ]
               , values = []

@@ -319,7 +319,7 @@ dependenciesVisitor dependencies projectContext =
 
         phantomVariables : List ( CustomTypeName, Int )
         phantomVariables =
-            []
+            [ ( "ExplicitPhantom", 0 ) ]
 
         -- TODO
         newPhantomVariables : Dict ModuleName (List ( CustomTypeName, Int ))
@@ -327,6 +327,35 @@ dependenciesVisitor dependencies projectContext =
             Dict.insert [ "Foo" ] phantomVariables projectContext.phantomVariables
     in
     ( [], { projectContext | phantomVariables = newPhantomVariables } )
+
+
+collectTypesFromDependencies :
+    List Elm.Docs.Module
+    ->
+        { phantom : List ( ModuleName, CustomTypeName, Int )
+        , nonPhantom : List ( ModuleName, CustomTypeName )
+        , unknown : List ( ModuleName, CustomTypeName, Int )
+        }
+collectTypesFromDependencies modules =
+    { phantom = []
+    , nonPhantom = []
+    , unknown = []
+    }
+
+
+findOutPhantomTypes :
+    { phantom : List ( ModuleName, CustomTypeName, Int )
+    , nonPhantom : List ( ModuleName, CustomTypeName )
+    , unknown : List ( ModuleName, CustomTypeName, Int )
+    }
+    ->
+        { phantom : List ( ModuleName, CustomTypeName, Int )
+        , nonPhantom : List ( ModuleName, CustomTypeName )
+        }
+findOutPhantomTypes record =
+    { phantom = record.phantom
+    , nonPhantom = record.nonPhantom
+    }
 
 
 
