@@ -976,6 +976,35 @@ a = List.map
 a = List.map
 """
                     ]
+    , test "should report imports of functions in modules already imported by the prelude, even if they are used" <|
+        \() ->
+            """module SomeModule exposing (a)
+import List exposing (List, (::))
+a : List String
+a = "" :: []
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "Type `List` is already imported by default in Elm code"
+                        , details = [ "Importing this module does not bring any value to the code." ]
+                        , under = "List"
+                        }
+                        |> Review.Test.atExactly { start = { row = 2, column = 8 }, end = { row = 2, column = 12 } }
+                        |> Review.Test.whenFixed
+                            """module SomeModule exposing (a)
+a = List.map
+"""
+                    ]
+    , Test.skip <|
+        test "should not report imports of functions in modules not imported by the prelude" <|
+            \() ->
+                """module SomeModule exposing (a)
+import List exposing (map)
+a = map
+"""
+                    |> Review.Test.run rule
+                    |> Review.Test.expectNoErrors
     ]
 
 
