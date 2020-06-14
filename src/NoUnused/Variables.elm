@@ -255,8 +255,25 @@ moduleDefinitionVisitor (Node _ moduleNode) context =
             ( [], markAllAsUsed names context )
 
 
+preludeImports : Set (List String)
+preludeImports =
+    Set.fromList
+        [ [ "Basics" ]
+        , [ "List" ]
+        , [ "Maybe" ]
+        , [ "Result" ]
+        , [ "String" ]
+        , [ "Char" ]
+        , [ "Tuple" ]
+        , [ "Debug" ]
+        , [ "Platform" ]
+        , [ "Platform", "Cmd" ]
+        , [ "Platform", "Sub" ]
+        ]
+
+
 importVisitor : Node Import -> Context -> ( List (Error {}), Context )
-importVisitor ((Node _ import_) as node) context =
+importVisitor ((Node range import_) as node) context =
     let
         errors : List (Error {})
         errors =
@@ -279,7 +296,19 @@ importVisitor ((Node _ import_) as node) context =
     in
     case import_.exposingList of
         Nothing ->
-            ( errors, registerModuleNameOrAlias node context )
+            if Set.member (Node.value import_.moduleName) preludeImports then
+                ( Rule.errorWithFix
+                    { message = "`" ++ String.join "." (Node.value import_.moduleName) ++ "` is already imported by default in Elm code"
+                    , details = [ "Importing this module does not bring any value to the code." ]
+                    }
+                    (Node.range import_.moduleName)
+                    [ Fix.removeRange <| untilStartOfNextLine range ]
+                    :: errors
+                , context
+                )
+
+            else
+                ( errors, registerModuleNameOrAlias node context )
 
         Just declaredImports ->
             ( errors

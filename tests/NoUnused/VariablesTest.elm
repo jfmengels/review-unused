@@ -21,6 +21,7 @@ all =
         , describe "Record updates" recordUpdateTests
         , describe "Function parameters" functionParameterTests
         , describe "Imports" importTests
+        , describe "Prelude imports" preludeImportTests
         , describe "Pattern matching variables" patternMatchingVariablesTests
         , describe "Defined types" typeTests
         , describe "Opaque Types" opaqueTypeTests
@@ -932,6 +933,49 @@ outer arg =
     """
                 |> Review.Test.run rule
                 |> Review.Test.expectNoErrors
+    ]
+
+
+preludeImportTests : List Test
+preludeImportTests =
+    [ test "should report imports of modules (without exposing) already imported by the prelude, even if they are used (basics)" <|
+        \() ->
+            """module SomeModule exposing (a)
+import Basics
+a = Basics.never
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "`Basics` is already imported by default in Elm code"
+                        , details = [ "Importing this module does not bring any value to the code." ]
+                        , under = "Basics"
+                        }
+                        |> Review.Test.atExactly { start = { row = 2, column = 8 }, end = { row = 2, column = 14 } }
+                        |> Review.Test.whenFixed
+                            """module SomeModule exposing (a)
+a = Basics.never
+"""
+                    ]
+    , test "should report imports of modules (without exposing) already imported by the prelude, even if they are used (list)" <|
+        \() ->
+            """module SomeModule exposing (a)
+import List
+a = List.map
+"""
+                |> Review.Test.run rule
+                |> Review.Test.expectErrors
+                    [ Review.Test.error
+                        { message = "`List` is already imported by default in Elm code"
+                        , details = [ "Importing this module does not bring any value to the code." ]
+                        , under = "List"
+                        }
+                        |> Review.Test.atExactly { start = { row = 2, column = 8 }, end = { row = 2, column = 12 } }
+                        |> Review.Test.whenFixed
+                            """module SomeModule exposing (a)
+a = List.map
+"""
+                    ]
     ]
 
 
