@@ -16,13 +16,13 @@ Provides [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-revi
 
 ## Provided rules
 
-- [`NoUnused.Variables`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Variables) - Reports unused top-level variables and types, imports and imported variables and types inside of a module.
-- [`NoUnused.CustomTypeConstructors`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-CustomTypeConstructors) - Reports unused constructors for a custom type.
-- [`NoUnused.Exports`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Exports) - Reports unused exposed elements from a module.
-- [`NoUnused.Modules`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Modules) - Reports unused modules in the project.
-- [`NoUnused.Dependencies`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Dependencies) - Reports unused dependencies in the project.
-- [`NoUnused.Parameters`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Dependencies) - Report unused parameters.
-- [`NoUnused.Patterns`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Dependencies) - Report useless patterns and pattern values that are not used.
+- [`NoUnused.Variables`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Variables) - Reports unused top-level variables and types, imports and imported variables and types inside of a module.
+- [`NoUnused.CustomTypeConstructors`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-CustomTypeConstructors) - Reports unused constructors for a custom type.
+- [`NoUnused.Exports`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Exports) - Reports unused exposed elements from a module.
+- [`NoUnused.Modules`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Modules) - Reports unused modules in the project.
+- [`NoUnused.Dependencies`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Dependencies) - Reports unused dependencies in the project.
+- [`NoUnused.Parameters`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Dependencies) - Report unused parameters.
+- [`NoUnused.Patterns`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Dependencies) - Report useless patterns and pattern values that are not used.
 
 ## Example configuration
 
@@ -62,4 +62,4 @@ A few of these rules provide automatic fixes using `elm-review --fix` or `elm-re
 
 ## Thanks
 
-Thanks to @sparksp for writing [`NoUnused.Parameters`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.4/NoUnused-Dependencies) and [`NoUnused.Patterns`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.2/NoUnused-Dependencies).
+Thanks to @sparksp for writing [`NoUnused.Parameters`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.5/NoUnused-Dependencies) and [`NoUnused.Patterns`](https://package.elm-lang.org/packages/jfmengels/review-unused/2.1.2/NoUnused-Dependencies).
